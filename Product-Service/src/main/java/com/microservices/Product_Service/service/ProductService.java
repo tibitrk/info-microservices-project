@@ -1,6 +1,8 @@
 package com.microservices.Product_Service.service;
 
+import com.microservices.Product_Service.client.UserClient;
 import com.microservices.Product_Service.model.Product;
+import com.microservices.Product_Service.model.UserResponse;
 import com.microservices.Product_Service.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,12 +15,22 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private UserClient userClient;
+
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
     public Product createProduct(Product product) {
         return productRepository.save(product);
+    }
+    public UserResponse getUserById(Long userId){
+        return userClient.getUserById(userId);
+    }
+
+    public Product getProductById(Long id){
+        return productRepository.findById(id).get();
     }
 
 }

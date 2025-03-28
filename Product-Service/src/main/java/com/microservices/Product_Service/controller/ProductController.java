@@ -2,6 +2,7 @@ package com.microservices.Product_Service.controller;
 
 import com.microservices.Product_Service.client.UserClient;
 import com.microservices.Product_Service.model.Product;
+import com.microservices.Product_Service.model.PurchaseResponse;
 import com.microservices.Product_Service.model.UserResponse;
 import com.microservices.Product_Service.repository.ProductRepository;
 import com.microservices.Product_Service.service.ProductService;
@@ -19,40 +20,40 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private UserClient userClient;
 
     @GetMapping
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
+
     @PostMapping
     public Product createProduct(@RequestBody Product product) {
         return productService.createProduct(product);
     }
 
     @PostMapping("/buy/{productId}/user/{userId}")
-    public ResponseEntity<String> buyProduct(@PathVariable Long productId, @PathVariable Long userId) {
+    public ResponseEntity<PurchaseResponse> buyProduct(@PathVariable Long productId, @PathVariable Long userId) {
         try {
-            // Fetch user details from User Service
-            UserResponse user = userClient.getUserById(userId);
+
+            UserResponse user = productService.getUserById(userId);
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PurchaseResponse(userId,
+                        null, productId, null, 0.0));
             }
 
-            // Fetch product from DB
-            Product product = productRepository.findById(productId).orElse(null);
+
+            Product product = productService.getProductById(productId);
             if (product == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PurchaseResponse(userId, null, productId, null, 0.0));
             }
 
-            return ResponseEntity.ok("User " + user.getName() + " bought the product: " + product.getName());
+            PurchaseResponse response = new PurchaseResponse(userId, user.getName(), productId, product.getName(), product.getPrice());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new PurchaseResponse(userId,null,productId,null,0.0));
         }
     }
 }
+
